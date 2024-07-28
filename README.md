@@ -1,7 +1,8 @@
 # AppEEARS API Client
+I'm building a PIP package.
 
 ## Description.
-A Python client for interacting with NASA Earthdata's AρρEEARS API. This package facilitates authentication, querying and handling of data coming from AρρEEARS, allowing Python users to work more efficiently with this service.
+ Python client for interacting with NASA Earthdata's AρρEEARS API. This package facilitates authentication, querying and handling of data coming from AρρEEARS, allowing Python users to work more efficiently with this service.
 
 ## Features
 - Easy authentication with NASA Earthdata Login.
