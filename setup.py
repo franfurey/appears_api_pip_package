@@ -3,15 +3,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='appears-api-client',
-    version='0.1.0',
+    version='0.1.2',
     packages=find_packages(),
     license='MIT',
     description='Python client for interacting with NASA Earthdata\'s AppEEARS API',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    author='Your Name',
-    author_email='your.email@example.com',
-    url='https://github.com/yourusername/your-repository',
+    author='Francisco Furey',
+    author_email='franciscofurey@gmail.com',
+    url='https://github.com/franfurey/appears_api_pip_package',
     install_requires=[i.strip() for i in open("requirements.txt").readlines()],
     classifiers=[
         'Development Status :: 3 - Alpha',

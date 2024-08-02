@@ -25,6 +25,13 @@ class AppEEARSClient:
         else:
             raise LoginError("Failed to log in to AppEEARS API")
 
+    def logout(self):
+        """Logs out of the API."""
+        headers = {'Authorization': f'Bearer {self.token}'}
+        response = requests.post(f"{self.base_url}/logout", headers=headers)
+        if response.status_code != 204:
+            raise RequestError("Failed to log out")
+
     def get_product(self, product_id: str) -> dict:
         """Retrieves product information only if the product_id is valid."""
         try:
@@ -39,13 +46,6 @@ class AppEEARSClient:
         except ValueError as e:
             # Handle the error by re-raising it or converting it to a different type of error
             raise RequestError(f"Invalid product ID: {str(e)}")
-
-    def logout(self):
-        """Logs out of the API."""
-        headers = {'Authorization': f'Bearer {self.token}'}
-        response = requests.post(f"{self.base_url}/logout", headers=headers)
-        if response.status_code != 204:
-            raise RequestError("Failed to log out")
 
     def get_all_products_and_layers(self) -> dict:
         """Retrieves all products and their layers using the authenticated session."""
@@ -80,60 +80,6 @@ class AppEEARSClient:
         except ValueError as e:
             # If the product ID is not found in PRODUCTS, handle it appropriately
             raise RequestError(f"Invalid product ID: {str(e)}")
-
-    def fetch_and_store_point_data(
-            self, 
-            latitude: float, 
-            longitude: float, 
-            product_id: str, 
-            band_names: list, 
-            token: str,
-            days_back: int = 30
-            ) -> dict:
-        """Submits a task for a specific geographic point and retrieves specified bands of a product."""
-        try:
-            # Validate product_id and bands
-            product = get_product_by_id(product_id=product_id)
-            valid_bands = [band for band in product.bands if band.name in band_names]
-            if not valid_bands:
-                raise ValueError("One or more bands are not valid for the specified product.")
-
-            # Set up dates
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=days_back)
-            formatted_start_date = start_date.strftime("%m-%d-%Y")  # MM-DD-YYYY
-            formatted_end_date = end_date.strftime("%m-%d-%Y")      # MM-DD-YYYY
-
-            task_name = f"{product_id} {end_date.strftime('%Y-%m-%d %H:%M:%S')}"
-
-            task_params = {
-                "task_type": "point",
-                "task_name": task_name,
-                "params": {
-                    "coordinates": [{"latitude": latitude, "longitude": longitude}],
-                    "dates": [{"startDate": formatted_start_date, "endDate": formatted_end_date}],
-                    "layers": [{"product": product_id, "layer": band.name} for band in valid_bands],
-                    "output": {
-                        "format": {"type": "geotiff"},
-                        "projection": "geographic"
-                    }
-                }
-            }
-
-            response = requests.post(
-                f"{self.base_url}/task",
-                headers={"Authorization": f"Bearer {token}"},
-                json=task_params
-            )
-
-            if response.status_code == 202:
-                task_response = response.json()
-                task_id = task_response.get('task_id', None)
-                return {"message": "Task submitted successfully", "task_id": task_id}
-            else:
-                return {"error": "Failed to submit task", "status_code": response.status_code, "response": response.json()}
-        except ValueError as e:
-            return {"error": str(e)}
         
     def check_task_status(self, task_id: str) -> bool:
         """ Checks the status of the task and returns True if it is complete. """
@@ -173,46 +119,6 @@ class AppEEARSClient:
         else:
             print(f"Could not list the files for the task {task_id}: HTTP {response.status_code}")
             return []
-
-    def execute_and_retrieve_task(self, latitude: float, longitude: float, product_id: str, band_names: list, days_back: int = 30):
-        """ Submits a task, checks its status until completion, and retrieves the files if the task is completed successfully. """
-        try:
-            # Submit the task and get task_id
-            response = self.fetch_and_store_point_data(
-                latitude=latitude,
-                longitude=longitude,
-                product_id=product_id,
-                band_names=band_names,
-                token=self.token,
-                days_back=days_back
-            )
-
-            if 'task_id' not in response:
-                print("Failed to submit task:", response.get('error', 'Unknown Error'))
-                return
-
-            task_id = response['task_id']
-            print(f"Task submitted successfully, task ID: {task_id}")
-
-            # Check task status until done or failed
-            while True:
-                if self.check_task_status(task_id=task_id):
-                    print("Task completed successfully.")
-                    break
-                else:
-                    print("Task not completed yet. Waiting...")
-                    time.sleep(10)  # Wait before checking again to avoid too many requests
-
-            # List files of the completed task
-            files = self.list_task_files(task_id=task_id)
-            if files:
-                return files
-            else:
-                print("No files available or task failed.")
-                return None
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            return None
         
     def download_and_process_file(self, task_id: str, file_id: str, file_name: str, token: str, destination_dir: str):
         """
@@ -295,6 +201,60 @@ class AppEEARSClient:
 
         logging.info(f"Extracted information and coordinates for the file {filename}")
         return data_points
+
+    def submit_point_task(
+            self, 
+            latitude: float, 
+            longitude: float, 
+            product_id: str, 
+            band_names: list, 
+            token: str,
+            days_back: int = 30
+            ) -> dict:
+        """Submits a task for a specific geographic point and retrieves specified bands of a product."""
+        try:
+            # Validate product_id and bands
+            product = get_product_by_id(product_id=product_id)
+            valid_bands = [band for band in product.bands if band.name in band_names]
+            if not valid_bands:
+                raise ValueError("One or more bands are not valid for the specified product.")
+
+            # Set up dates
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days_back)
+            formatted_start_date = start_date.strftime("%m-%d-%Y")  # MM-DD-YYYY
+            formatted_end_date = end_date.strftime("%m-%d-%Y")      # MM-DD-YYYY
+
+            task_name = f"{product_id} {end_date.strftime('%Y-%m-%d %H:%M:%S')}"
+
+            task_params = {
+                "task_type": "point",
+                "task_name": task_name,
+                "params": {
+                    "coordinates": [{"latitude": latitude, "longitude": longitude}],
+                    "dates": [{"startDate": formatted_start_date, "endDate": formatted_end_date}],
+                    "layers": [{"product": product_id, "layer": band.name} for band in valid_bands],
+                    "output": {
+                        "format": {"type": "geotiff"},
+                        "projection": "geographic"
+                    }
+                }
+            }
+
+            response = requests.post(
+                f"{self.base_url}/task",
+                headers={"Authorization": f"Bearer {token}"},
+                json=task_params
+            )
+
+            if response.status_code == 202:
+                task_response = response.json()
+                task_id = task_response.get('task_id', None)
+                return {"message": "Task submitted successfully", "task_id": task_id}
+            else:
+                return {"error": "Failed to submit task", "status_code": response.status_code, "response": response.json()}
+        except ValueError as e:
+            return {"error": str(e)}
     
     def submit_area_task(self, geo_json: dict, start_date: str, end_date: str, layers: list, projection: str = "geographic", format_type: str = "geotiff"):
         """
@@ -309,7 +269,7 @@ class AppEEARSClient:
         """
         task_params = {
             "task_type": "area",
-            "task_name": f"Area_Task_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}",
+            "task_name": f"Area_Task {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "params": {
                 "geo": geo_json,
                 "dates": [{
@@ -336,3 +296,43 @@ class AppEEARSClient:
             return {"message": "Area task submitted successfully", "task_id": task_response.get('task_id', None)}
         else:
             return {"error": "Failed to submit area task", "status_code": response.status_code, "response": response.text}
+
+    def execute_and_retrieve_task(self, latitude: float, longitude: float, product_id: str, band_names: list, days_back: int = 30):
+        """ Submits a task, checks its status until completion, and retrieves the files if the task is completed successfully. """
+        try:
+            # Submit the task and get task_id
+            response = self.submit_point_task(
+                latitude=latitude,
+                longitude=longitude,
+                product_id=product_id,
+                band_names=band_names,
+                token=self.token,
+                days_back=days_back
+            )
+
+            if 'task_id' not in response:
+                print("Failed to submit task:", response.get('error', 'Unknown Error'))
+                return
+
+            task_id = response['task_id']
+            print(f"Task submitted successfully, task ID: {task_id}")
+
+            # Check task status until done or failed
+            while True:
+                if self.check_task_status(task_id=task_id):
+                    print("Task completed successfully.")
+                    break
+                else:
+                    print("Task not completed yet. Waiting...")
+                    time.sleep(10)  # Wait before checking again to avoid too many requests
+
+            # List files of the completed task
+            files = self.list_task_files(task_id=task_id)
+            if files:
+                return files
+            else:
+                print("No files available or task failed.")
+                return None
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            return None
