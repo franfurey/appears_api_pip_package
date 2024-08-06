@@ -6,6 +6,7 @@ from ..exceptions import LoginError, RequestError
 class AppEEARSClient:
     def __init__(self, username: str, password: str):
         self.token = self.login(username=username, password=password)
+        self.base_url = base_url
 
     def login(self, username: str, password: str) -> str:
         """Log in and return a token."""

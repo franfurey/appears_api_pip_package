@@ -1,9 +1,11 @@
 # src.appeears.py
+from datetime import datetime
+
 from .appeears_client.auth import AppEEARSClient
-from .appeears_client.product_management import ProductManagement
-from .appeears_client.task_management import TaskManagement
 from .appeears_client.file_management import FileManager
+from .appeears_client.task_management import TaskManagement
 from .appeears_client.task_orchestrator import TaskOrchestrator
+from .appeears_client.product_management import ProductManagement
 
 class APIClient:
     def __init__(self, username: str, password: str):
@@ -37,12 +39,16 @@ class APIClient:
             longitude: float, 
             product_id: str, 
             band_names: list, 
-            days_back: int = 30
+            start_date: datetime,  
+            end_date: datetime
         ):
-        return self.task_orchestrator.execute_and_retrieve_task(
-            latitude, 
-            longitude, 
-            product_id, 
-            band_names, 
-            days_back
-        )
+        
+        result = self.task_orchestrator.execute_and_retrieve_task(
+                    latitude=latitude, 
+                    longitude=longitude, 
+                    product_id=product_id, 
+                    band_names=band_names, 
+                    start_date=start_date, 
+                    end_date=end_date
+                )
+        return result

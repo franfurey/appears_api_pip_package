@@ -15,6 +15,7 @@ from ..models import get_product_by_id
 class TaskManagement:
     def __init__(self, token: str):
         self.token = token
+        self.base_url = base_url
 
     def check_task_status(self, task_id: str) -> bool:
         """ Checks the status of the task and returns True if it is complete. """
@@ -61,8 +62,8 @@ class TaskManagement:
             longitude: float, 
             product_id: str, 
             band_names: list, 
-            token: str,
-            days_back: int = 30
+            start_date: datetime,
+            end_date: datetime
             ) -> dict:
         """Submits a task for a specific geographic point and retrieves specified bands of a product."""
         try:
@@ -73,12 +74,11 @@ class TaskManagement:
                 raise ValueError("One or more bands are not valid for the specified product.")
 
             # Set up dates
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=days_back)
-            formatted_start_date = start_date.strftime("%m-%d-%Y")  # MM-DD-YYYY
-            formatted_end_date = end_date.strftime("%m-%d-%Y")      # MM-DD-YYYY
+            today = datetime.now() # Just for task name reference.
+            formatted_start_date = start_date.strftime("%m-%d-%Y")
+            formatted_end_date = end_date.strftime("%m-%d-%Y")
 
-            task_name = f"{product_id} {end_date.strftime('%Y-%m-%d %H:%M:%S')}"
+            task_name = f"{product_id} {today.strftime('%Y-%m-%d %H:%M:%S')}"
 
             task_params = {
                 "task_type": "point",
@@ -96,7 +96,7 @@ class TaskManagement:
 
             response = requests.post(
                 f"{self.base_url}/task",
-                headers={"Authorization": f"Bearer {token}"},
+                headers={"Authorization": f"Bearer {self.token}"},
                 json=task_params
             )
 
@@ -109,7 +109,15 @@ class TaskManagement:
         except ValueError as e:
             return {"error": str(e)}
     
-    def submit_area_task(self, geo_json: dict, start_date: str, end_date: str, layers: list, projection: str = "geographic", format_type: str = "geotiff"):
+    def submit_area_task(
+            self, 
+            geo_json: dict, 
+            start_date: str, 
+            end_date: str, 
+            layers: list, 
+            projection: str = "geographic", 
+            format_type: str = "geotiff"
+        ):
         """
         Submits an area-based task to the AppEEARS API.
 

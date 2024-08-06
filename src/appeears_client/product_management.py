@@ -7,6 +7,7 @@ from ..models import get_product_by_id
 class ProductManagement:
     def __init__(self, token: str):
         self.token = token
+        self.base_url = base_url
 
     def get_product(self, product_id: str) -> dict:
         """Retrieves product information only if the product_id is valid."""

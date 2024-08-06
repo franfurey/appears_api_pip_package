@@ -13,6 +13,7 @@ from ..exceptions import RequestError
 class FileManager:
     def __init__(self, token: str):
         self.token = token
+        self.base_url = base_url
 
     def download_and_process_file(self, task_id: str, file_id: str, file_name: str, token: str, destination_dir: str):
         """

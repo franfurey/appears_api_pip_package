@@ -1,15 +1,24 @@
 # src.appeears_client.task_orchestrator.py
-
 import time
-from .task_management import TaskManagement
+from datetime import datetime
+
 from .file_management import FileManager
+from .task_management import TaskManagement
 
 class TaskOrchestrator:
     def __init__(self, token: str):
         self.task_manager = TaskManagement(token=token)
         self.file_manager = FileManager(token=token)
 
-    def execute_and_retrieve_task(self, latitude: float, longitude: float, product_id: str, band_names: list, days_back: int = 30):
+    def execute_and_retrieve_task(
+            self, 
+            latitude: float, 
+            longitude: float, 
+            product_id: str, 
+            band_names: list, 
+            start_date: datetime, 
+            end_date: datetime
+        ):
         """Orchestrates the task submission, status checking, and file retrieval."""
         try:
             # Submit the task and get task_id
@@ -18,7 +27,8 @@ class TaskOrchestrator:
                 longitude=longitude,
                 product_id=product_id,
                 band_names=band_names,
-                days_back=days_back
+                start_date=start_date,
+                end_date=end_date
             )
 
             if 'task_id' not in response:
