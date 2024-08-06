@@ -6,6 +6,7 @@ import pprint
 import logging
 import requests
 import rasterio
+from tqdm import tqdm
 from datetime import datetime, timedelta
 
 from .config import base_url
@@ -18,28 +19,49 @@ class TaskManagement:
         self.base_url = base_url
 
     def check_task_status(self, task_id: str) -> bool:
-        """ Checks the status of the task and returns True if it is complete. """
-        status_url = f"{self.base_url}/task/{task_id}"
+        """Checks the status of the task and returns True if it is complete."""
+        status_url = f"{self.base_url}/status/{task_id}"
         headers = {"Authorization": f"Bearer {self.token}"}
 
-        while True:
-            response = requests.get(status_url, headers=headers)
-            if response.status_code == 200:
-                task_info = response.json()
-                task_status = task_info['status']
-                print(f"Task status for {task_id}: {task_status}")
+        pbar = None  # Start progress bar as None
+        queued_message_displayed = False  # Variable to control the printout of the 'queued' message
 
-                if task_status == 'done':
-                    return True
-                elif task_status in ['error', 'failed']:
-                    print(f"Task {task_id} failed with status {task_status}")
-                    return False
+        try:
+            while True:
+                response = requests.get(status_url, headers=headers)
+                if response.status_code == 200:
+                    status_details = response.json()
+
+                    # Manage progress bar initialization and update
+                    if 'progress' in status_details and status_details['progress']['summary'] > 0:
+                        if pbar is None:  # Initialize the progress bar only when there is actual progress
+                            pbar = tqdm(total=100, desc="Overall Task Progress", bar_format="{l_bar}{bar} {n_fmt}/{total_fmt}")
+                        summary_progress = status_details['progress'].get('summary', 0)
+                        pbar.n = summary_progress
+                        pbar.refresh()
+
+                    if status_details.get('status') == 'queued' and not queued_message_displayed:
+                        tqdm.write("Task in Queued, waiting for AppEEARS server...")
+                        queued_message_displayed = True  # Mark that the message has been displayed
+
+                    if status_details.get('status') == 'done':
+                        if pbar is not None:
+                            pbar.n = 100
+                            pbar.refresh()
+                        break
+                    elif status_details.get('status') == 'error':
+                        tqdm.write("Error occurred in task processing.")
+                        break
+
+                    time.sleep(10)  # Wait before checking again to avoid too many requests
                 else:
-                    # Wait for a bit before checking again
-                    time.sleep(20)
-            else:
-                print(f"Error checking task status for {task_id}: HTTP {response.status_code}")
-                return False
+                    tqdm.write(f"Error checking task status for {task_id}: HTTP {response.status_code}")
+                    break
+        finally:
+            if pbar is not None:
+                pbar.close()  # Ensure the progress bar is closed if it was initialized
+
+        return status_details.get('status') == 'done'
 
     def list_task_files(self, task_id: str) -> list:
         """ Lists the available files of a completed task. """
