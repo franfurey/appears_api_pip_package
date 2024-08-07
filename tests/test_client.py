@@ -46,7 +46,7 @@ def test_get_product_layers(client):
     except RequestError as e:
         pytest.fail(f"RequestError occurred: {e}")
 
-def test_submit_and_retrieve_task(client):
+def test_submit_and_retrieve_point_task(client):
     """Tests the full cycle of submitting and retrieving task data."""
     latitude = 40.7128
     longitude = -74.0060
@@ -55,7 +55,7 @@ def test_submit_and_retrieve_task(client):
     days_back = 30
 
     try:
-        response = client.submit_and_retrieve_task(
+        response = client.submit_and_retrieve_point_task(
             latitude=latitude,
             longitude=longitude,
             product_id=product_id,
