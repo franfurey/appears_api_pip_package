@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='appears-api-client',
+    name='appeears-api-client',
     version='0.1.2',
     packages=find_packages(),
     license='MIT',
@@ -11,7 +11,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Francisco Furey',
     author_email='franciscofurey@gmail.com',
-    url='https://github.com/franfurey/appears_api_pip_package',
+    url='https://github.com/franfurey/appeears_api_pip_package',
     install_requires=[i.strip() for i in open("requirements.txt").readlines()],
     classifiers=[
         'Development Status :: 3 - Alpha',

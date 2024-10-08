@@ -2,7 +2,7 @@
 import os
 import pytest
 from dotenv import load_dotenv
-from src.appears import APIClient
+from src.appeears import APIClient
 from src.exceptions import LoginError, RequestError
 
 # Load environment variables
@@ -12,7 +12,7 @@ load_dotenv()
 @pytest.fixture(scope="module")
 def client():
     """Setup of the API client before testing and teardown after."""
-    api_client = APIClient(username=os.getenv("APPEARS_USER"), password=os.getenv("APPEARS_PASS"))
+    api_client = APIClient(username=os.getenv("APPEEARS_USER"), password=os.getenv("APPEEARS_PASS"))
     yield api_client
     api_client.logout()
 

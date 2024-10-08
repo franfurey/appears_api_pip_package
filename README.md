@@ -13,7 +13,7 @@ Python client for interacting with NASA Earthdata's AρρEEARS API. This package
 Install the package using pip:
 
 ```bash
-pip install appears-api-client
+pip install appeears-api-client
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ pip install appears-api-client
 Import the client and create an instance with your credentials:
 
 ```bash
-from appears_api.client import APIClient
+from appeears_api.client import APIClient
 
 client = APIClient(username='your_username', password='your_password')
 ```
@@ -75,14 +75,14 @@ This example demonstrates how to submit a task to retrieve daytime and nighttime
 ```bash
 import os
 from datetime import datetime
-from src.appears import APIClient
+from src.appeears import APIClient
 
 # Load environment variables (ensure your .env file contains the necessary API credentials)
 from dotenv import load_dotenv
 load_dotenv()
 
 # Create an instance of the API client with your credentials
-client = APIClient(username=os.getenv('APPEARS_USER'), password=os.getenv('APPEARS_PASS'))
+client = APIClient(username=os.getenv('APPEEARS_USER'), password=os.getenv('APPEEARS_PASS'))
 
 # Define the geographical area of interest in GeoJSON format
 geo_json = {
